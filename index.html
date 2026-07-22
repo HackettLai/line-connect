@@ -319,7 +319,6 @@
         const listEl = document.getElementById('pointList');
         const nodeIdListEl = document.getElementById('nodeIdList');
         const outCfg = document.getElementById('outConfig');
-        // const outPath = document.getElementById('outPath');
 
         const X_ANCHORS = ['left', 'center', 'right'];
         const Y_ANCHORS = ['top', 'center', 'bottom'];
@@ -579,7 +578,6 @@
 
           const cfgLines = points.map((pt) => '  { xEl: "' + pt.xEl + '", xAnchor: "' + pt.xAnchor + '", xOffset: ' + formatOffset(pt.xOffset || 0) + ', yEl: "' + pt.yEl + '", yAnchor: "' + pt.yAnchor + '", yOffset: ' + formatOffset(pt.yOffset || 0) + ' }');
           outCfg.textContent = 'const connector = [\n' + cfgLines.join(',\n') + '\n];';
-          // outPath.textContent = 'd="' + d + '"';
         }
 
         // ---------- Copy ----------
