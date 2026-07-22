@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>L-Shape Connector</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Microsoft JhengHei', sans-serif;
+        background: #f0f2f5;
+        min-height: 100vh;
+      }
+      #svg-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 999;
+      }
+      .wrapper {
+        max-width: 1440;
+        margin: 60px auto;
+        padding: 20px 24px;
+      }
+      .hint {
+        text-align: center;
+        color: #aaa;
+        font-size: 0.82rem;
+        margin-bottom: 30px;
+      }
+      .row-label {
+        display: flex;
+        align-items: center;
+      }
+      #el-a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #1a5bbf;
+        color: #fff;
+        font-size: 1.4rem;
+        font-weight: bold;
+        padding: 10px 22px;
+        border-radius: 8px;
+      }
+      .row-dot {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 55px;
+        margin-bottom: 16px;
+      }
+
+      #content {
+        background: #fff;
+        border-left: 4px solid #1a5bbf;
+        border-radius: 6px;
+        padding: 24px 28px;
+        margin-left: 150px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        line-height: 1.9;
+        color: #333;
+      }
+      #content h2 {
+        font-size: 1.3rem;
+        color: #1a5bbf;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <svg id="svg-overlay" xmlns="http://www.w3.org/2000/svg">
+      <!-- Definitions for endpoints markers style -->
+      <defs>
+        <!-- Blue marker -->
+        <marker id="mdot-blue" markerWidth="8" markerHeight="8" refX="4" refY="4">
+          <circle cx="4" cy="4" r="3" fill="#1a5bbf" />
+        </marker>
+        <!-- Red marker -->
+        <marker id="mdot-red" markerWidth="8" markerHeight="8" refX="4" refY="4">
+          <circle cx="4" cy="4" r="3" fill="#e8365d" />
+        </marker>
+      </defs>
+
+      <!-- Blue dashed connector -->
+      <path id="path-blue" fill="none" stroke="#1a5bbf" stroke-width="2" stroke-dasharray="5 4" opacity="1" marker-start="url(#mdot-blue)" marker-end="url(#mdot-blue)" d="" />
+
+      <!-- Red dashed connector-->
+      <path id="path-red" fill="none" stroke="#e8365d" stroke-width="2" stroke-dasharray="5 4" opacity="1" marker-start="url(#mdot-red)" marker-end="url(#mdot-red)" d="" />
+    </svg>
+
+    <div class="wrapper">
+      <p class="hint">↔ Resize the window — Connector redraws responsively</p>
+
+      <!-- Label -->
+      <div class="row-label">
+        <div id="el-a"># 節目概念</div>
+      </div>
+
+      <!-- Dot top-right -->
+      <div class="row-dot">
+        <div id="el-b"></div>
+      </div>
+
+      <!-- Content box -->
+      <div id="content">
+        <h2>三位台灣棒球傳奇人物</h2>
+        <p>重返球場，化身總教練，各自組隊展開激烈對決。最終，只有一支隊伍能脫穎而出，成為至高無上的LEGENDTEAM，一場關於榮耀與傳承的巔峰之戰。 三位教練將招募台灣最具代表性的球星，透過選秀與測試賽機制，為各自的新隊伍打造最強陣容。 這是一場殘酷的生存競賽，球員一生累積的自尊與榮譽全數押上。從組隊過程到最終決戰，節目完整呈現激烈競爭、成長蛻變、團隊合作，以及跨世代相互連結的棒球熱情。</p>
+        <br />
+        <h2>「八次手術，從未讓他放下手中的球；無數次與傷痛的博弈，淬煉出這世界上最堅韌的靈魂。</h2>
+        <p>郭泓志教你的不只是投球，而是『如何從深淵中站起來』。 他的球隊，將是力量的代名詞，更是意志的堡壘。在 Team A，唯一的規則就是： 只要心臟還在跳動，就沒有投降的理由。」曾經被埋沒頂尖選手，歷經了數十年的等待，終於迎來曙光，我們將一起寫下屬於台灣的 棒球傳奇。</p>
+      </div>
+    </div>
+
+    <script>
+      const labelEl = document.getElementById('el-a');
+      const contentEl = document.getElementById('content');
+      const bluePath = document.getElementById('path-blue');
+      const redPath = document.getElementById('path-red');
+
+      function draw() {
+        const rectLabel = labelEl.getBoundingClientRect();
+        const rectContent = contentEl.getBoundingClientRect();
+        /**========================================================================
+         * Draw blue connector path (A -> B -> C):
+         *========================================================================**/
+        // A: start at right-middle of `labelEl` (right edge, vertical center)
+        const blueStartX = rectLabel.right;
+        const blueStartY = rectLabel.top + rectLabel.height / 2;
+
+        // C: diagonal end point near the upper-right of `content`
+        const blueEndX = rectContent.right - 40;
+        const blueEndY = rectContent.top - 20;
+
+        // B: horizontal bend point (same Y as A; X is C - 40px)
+        const blueBendX = blueEndX - 40;
+        const blueBendY = blueStartY;
+
+        bluePath.setAttribute('d', `M ${blueStartX},${blueStartY} L ${blueBendX},${blueBendY} L ${blueEndX},${blueEndY}`);
+
+        /**========================================================================
+         * Draw red connector path (A -> B -> C):
+         *========================================================================**/
+        // A: start at bottom-center of `elA` (bottom edge, horizontal center)
+        const redStartX = rectLabel.left + rectLabel.width / 2;
+        const redStartY = rectLabel.bottom;
+
+        // C: diagonal end point near the lower-left of `content`
+        const redEndX = rectContent.left - 20;
+        const redEndY = rectContent.bottom - 40;
+
+        // B: vertical bend point (same X as A; Y is C - 40px)
+        const redBendX = redStartX;
+        const redBendY = redEndY - 40;
+
+        redPath.setAttribute('d', `M ${redStartX},${redStartY} L ${redBendX},${redBendY} L ${redEndX},${redEndY}`);
+      }
+
+      requestAnimationFrame(() => requestAnimationFrame(draw));
+      window.addEventListener('resize', draw);
+      window.addEventListener('scroll', draw);
+    </script>
+  </body>
+</html>
