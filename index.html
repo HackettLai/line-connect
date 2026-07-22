@@ -319,7 +319,7 @@
         const listEl = document.getElementById('pointList');
         const nodeIdListEl = document.getElementById('nodeIdList');
         const outCfg = document.getElementById('outConfig');
-        const outPath = document.getElementById('outPath');
+        // const outPath = document.getElementById('outPath');
 
         const X_ANCHORS = ['left', 'center', 'right'];
         const Y_ANCHORS = ['top', 'center', 'bottom'];
@@ -584,7 +584,7 @@
 
         // ---------- Copy ----------
         document.getElementById('copyBtn').addEventListener('click', () => {
-          const text = outCfg.textContent + '\n\n' + outPath.textContent;
+          const text = outCfg.textContent;
           const ta = document.createElement('textarea');
           ta.value = text;
           document.body.appendChild(ta);
