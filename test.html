@@ -110,21 +110,56 @@
       }
 
       /* ============================================================
-     ADDED: source display at the bottom of the page
+     ADDED: SOURCE-CODE VIEWER PANEL
+     ------------------------------------------------------------
+     Display-only. Not part of the connector system — safe to
+     delete this block (plus the panel HTML and the viewer
+     script at the bottom) without affecting the diagram.
      ============================================================ */
-      #source-view {
-        margin-top: 20px;
+      .source-panel {
+        margin-top: 16px;
         background: #171e30;
         border: 1px solid #2a3247;
         border-radius: 12px;
-        padding: 16px;
+        padding: 14px;
+        position: relative;
+      }
+      .source-panel h2 {
+        font-size: 15px;
+        margin: 0 0 10px;
+        color: #a8c7fa;
+      }
+      #source-view {
+        background: #0f1420;
+        border: 1px solid #2a3247;
+        border-radius: 8px;
+        padding: 14px;
+        margin: 0;
         font-family: 'Consolas', 'Fira Mono', monospace;
         font-size: 12px;
         line-height: 1.5;
         color: #a8c7fa;
         white-space: pre;
         overflow: auto;
-        max-height: 500px;
+        max-height: 480px;
+      }
+      #copy-all-btn {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        background: #3d5aa8;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 16px;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      #copy-all-btn:hover {
+        background: #4a6cc4;
+      }
+      #copy-all-btn.ok {
+        background: #166534;
       }
     </style>
   </head>
@@ -172,6 +207,18 @@
         <!-- Connector 4: uses global style only -->
         <path id="conn4" class="connector" marker-end="url(#arrow)" />
       </svg>
+    </div>
+
+    <!-- ============================================================
+     ADDED: SOURCE-CODE VIEWER — sits directly under #diagram.
+     The <pre> is filled by the viewer script at the bottom of
+     the page. Delete this block (plus its CSS and script) to
+     remove the feature; the diagram is unaffected.
+     ============================================================ -->
+    <div class="source-panel">
+      <h2>Full source code</h2>
+      <button id="copy-all-btn">Copy all code</button>
+      <pre id="source-view">Loading source…</pre>
     </div>
 
     <script>
@@ -303,21 +350,117 @@
       window.addEventListener('resize', redrawAll);
     </script>
 
-    <!-- ============================================================
-     Full page source displayed below the diagram
-     ============================================================ -->
-    <pre id="source-view"></pre>
-
     <script>
+      /* ============================================================
+     ADDED: SOURCE VIEWER + COPY BUTTON
+     ------------------------------------------------------------
+     Kept in its OWN <script> so the original connector script
+     above stays 100% untouched.
+
+     How the source is obtained (two strategies):
+
+       1. fetch(location.href) — returns the RAW file exactly as
+          it exists on disk: byte-for-byte, all comments, all
+          formatting. Works whenever the page is served over
+          http(s). This is the preferred path.
+
+       2. Fallback (fetch blocked, e.g. file:// or a sandboxed
+          preview): serialize the live DOM. Because redrawAll()
+          has already injected computed d="M 230.2 ..." values
+          into the connector paths, we serialize a CLONE with
+          those runtime attributes stripped, so the displayed
+          code stays clean. Note: DOM serialization normalizes
+          minor syntax (e.g. `<path />` becomes `<path></path>`)
+          but all comments and code are preserved.
+     ============================================================ */
       (function () {
-        const clone = document.documentElement.cloneNode(true);
-        // Strip the runtime-computed d="M ..." values so the displayed
-        // code matches the source, not the rendered result
-        clone.querySelectorAll('path.connector').forEach((p) => p.removeAttribute('d'));
-        // Don't embed the source inside its own <pre> in the clone
-        clone.querySelector('#source-view').textContent = '';
-        document.getElementById('source-view').textContent = '<!doctype html>\n' + clone.outerHTML;
+        const view = document.getElementById('source-view');
+        const btn = document.getElementById('copy-all-btn');
+        let fullSource = '';
+
+        function buildFromDOM() {
+          const clone = document.documentElement.cloneNode(true);
+          // Strip runtime-computed geometry so paths look like the original file
+          clone.querySelectorAll('path.connector').forEach((p) => p.removeAttribute('d'));
+          // Empty the viewer's own <pre> in the clone (avoid embedding source-within-source)
+          const preClone = clone.querySelector('#source-view');
+          if (preClone) preClone.textContent = '';
+          return '<!doctype html>\n' + clone.outerHTML;
+        }
+
+        fetch(location.href)
+          .then((r) => {
+            if (!r.ok) throw new Error(r.status);
+            return r.text();
+          })
+          .then((text) => {
+            fullSource = text;
+            view.textContent = fullSource; // textContent auto-escapes < and >
+          })
+          .catch(() => {
+            fullSource = buildFromDOM();
+            view.textContent = fullSource;
+          });
+
+        btn.addEventListener('click', () => {
+          const done = () => {
+            btn.textContent = 'Copied!';
+            btn.classList.add('ok');
+            setTimeout(() => {
+              btn.textContent = 'Copy all code';
+              btn.classList.remove('ok');
+            }, 1400);
+          };
+          navigator.clipboard.writeText(fullSource).then(done).catch(() => {
+            // Fallback for environments where the Clipboard API is blocked
+            const ta = document.createElement('textarea');
+            ta.value = fullSource;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            done();
+          });
+        });
       })();
     </script>
-  </body>
+  <!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body>
 </html>
